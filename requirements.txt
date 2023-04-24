@@ -1,0 +1,12 @@
+gym==0.26.2
+gym-notices==0.0.8
+gym-super-mario-bros==7.4.0
+keras==2.10.0
+Keras-Preprocessing==1.1.2
+numpy==1.24.2
+tensorboard==2.10.1
+tensorboard-data-server==0.6.1
+tensorboard-plugin-wit==1.8.1
+tensorflow==2.10.1
+tensorflow-estimator==2.10.0
+tensorflow-gpu==2.10.1

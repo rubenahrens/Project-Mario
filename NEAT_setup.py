@@ -7,4 +7,6 @@ https://neat-python.readthedocs.io/en/latest/
 
 """
 
-import NEAT
+import neat
+
+print(neat.__version__)

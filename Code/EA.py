@@ -4,9 +4,9 @@ network used to play super mario bros.
 """
 import sys
 
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
-from nes_py.wrappers import JoypadSpace
-import gym
+# from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
+# from nes_py.wrappers import JoypadSpace
+import gym, ppaquette_gym_super_mario
 import numpy as np
 # import tensorflow as tf
 import neat
@@ -21,9 +21,13 @@ class EA():
         # self.config = config
         self.generations = generations
         self.par = parallel
+        self.actions = [
+            [0, 0, 0, 1, 1, 1],
+            [0, 0, 0, 1, 0, 1],
+        ]
 
     def get_action(self, output):
-        return output.index(max(output))
+        return self.actions[output.index(max(output))]
 
     def fitness(self, genomes, config):
         env = gym.make('SuperMarioBros-1-1-v0')
@@ -61,8 +65,8 @@ class EA():
 
 
     def _fitness_func(self, genome, config, o):
-        env = gym.make('SuperMarioBros-1-1-v0')
-        env = JoypadSpace(env, SIMPLE_MOVEMENT)
+        env = gym.make('ppaquette/SuperMarioBros-1-1-Tiles-v0')
+        # env = JoypadSpace(env, SIMPLE_MOVEMENT)
         # env.configure(lock=self.lock)
         try:
             state = env.reset()
@@ -73,18 +77,22 @@ class EA():
             while not done:
                 state = state.flatten()
                 output = net.activate(state)
-                print(output)
                 output = self.get_action(output)
                 s, reward, done, info = env.step(output)
-                fitness = info['x_pos']
-                print("Step: {}, Action: {}, Reward: {}, Info: {}".format(i, output, reward, info))
+                # print("Step: {}, Action: {}, Reward: {}, Info: {}".format(i, output, reward, info))
                 state = s
                 i += 1
+                if i % 50 == 0:
+                    if old == info['distance']:
+                        break
+                    else:
+                        old = info['distance']
 
             # [print(str(i) + " : " + str(info[i]), end=" ") for i in info.keys()]
             # print("\n******************************")
 
-            # fitness =  info['x_pos']
+            fitness = -1 if info['distance'] <= 40 else info['distance']
+            env.close()
             print("Fitness: ", fitness)
             if fitness >= 3252:
                 pickle.dump(genome, open("finisher.pkl", "wb"))
@@ -92,7 +100,6 @@ class EA():
                 print("Done")
                 exit()
             o.put(fitness)
-            env.close()
         except KeyboardInterrupt:
             env.close()
             exit()
@@ -196,5 +203,5 @@ def main():
     #     print(info)
         
 if __name__ == "__main__":
-    t = EA(1000, parallel=1)
+    t = EA(10000, parallel=10)
     t.main()

@@ -8,26 +8,29 @@ https://stable-baselines.readthedocs.io/en/master/modules/ppo2.html
 
 """
 
-import gym
+from gym.wrappers import GrayScaleObservation
+import gym_super_mario_bros
 import numpy as np
 import tensorflow as tf
 from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
+from nes_py.wrappers import JoypadSpace
+from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
+import datetime
 
-# class PPO():
-#     def __init__(self, config):
-#     self.config = config
-
-#     def get_action(self, observation, theta=None):
-#         raise NotImplementedError
-
-#     def get_reward(self, env, theta=None, render=False):
-#         raise NotImplementedError
-
-#     def train(self):
-#         raise NotImplementedError
+LOG_DIR = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 def main():
-    env = gym.make('SuperMarioBros-v0')
+    # 1. Create the base environment
+    env = gym_super_mario_bros.make('SuperMarioBros-v0')
+    # 2. Simplify the controls 
+    env = JoypadSpace(env, SIMPLE_MOVEMENT)
+    # 3. Grayscale
+    env = GrayScaleObservation(env, keep_dim=True)
+    # 4. Wrap inside the Dummy Environment
+    env = DummyVecEnv([lambda: env])
+    # 5. Stack the frames
+    env = VecFrameStack(env, 4, channels_order='last')
     
     config = {
         "population_size":50,
@@ -40,7 +43,13 @@ def main():
     model = PPO('CnnPolicy', env, verbose=1, tensorboard_log=LOG_DIR, learning_rate=config["learning_rate"], 
             n_steps=512) 
     
-    model.learn(total_timesteps=1000000)
+    # train the agent until ctrl+c is pressed
+    try:
+        model.learn(total_timesteps=1000000)
+    except KeyboardInterrupt:
+        model.save('thisisatestmodel')
+        print("Saved model")
+        exit()
     
     env.reset()
     done = False

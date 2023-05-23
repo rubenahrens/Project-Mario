@@ -9,7 +9,7 @@ https://stable-baselines.readthedocs.io/en/master/modules/ppo2.html
 """
 
 from gym.wrappers import GrayScaleObservation
-import gym_super_mario_bros
+import gym
 import numpy as np
 import tensorflow as tf
 from stable_baselines3 import PPO
@@ -20,9 +20,9 @@ import datetime
 
 LOG_DIR = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-def main():
+def build_env(level=1):
     # 1. Create the base environment
-    env = gym_super_mario_bros.make('SuperMarioBros-v0')
+    env = gym.make('SuperMarioBrosRandomStages-v0', stages=['1-4', '2-4', '3-4', '4-4'])
     # 2. Simplify the controls 
     env = JoypadSpace(env, SIMPLE_MOVEMENT)
     # 3. Grayscale
@@ -31,6 +31,13 @@ def main():
     env = DummyVecEnv([lambda: env])
     # 5. Stack the frames
     env = VecFrameStack(env, 4, channels_order='last')
+    return env
+
+def train_model(model, env, config):
+    model.learn(total_timesteps=10, progress_bar=True, tb_log_name="first_run")
+    model.save('thisisatestmodel')
+
+def main():
     
     config = {
         "population_size":50,
@@ -40,27 +47,24 @@ def main():
         "num_episode":1000
     }
     
-    model = PPO('CnnPolicy', env, verbose=1, tensorboard_log=LOG_DIR, learning_rate=config["learning_rate"], 
-            n_steps=512) 
-    
-    # train the agent until ctrl+c is pressed
-    try:
-        model.learn(total_timesteps=1000000)
-    except KeyboardInterrupt:
-        model.save('thisisatestmodel')
-        print("Saved model")
-        exit()
-    
-    env.reset()
-    done = False
-    while not done:
-        action = env.action_space.sample()
-        observation, reward, done, info = env.step(action)
-        print(observation.shape)
-        print(reward)
-        print(done)
-        print(info)
-
+    env = build_env()
+    if input("load? (y/n): ") == 'y':
+        model = PPO.load('thisisatestmodel', env=env, verbose=0, tensorboard_log=LOG_DIR, learning_rate=config["learning_rate"],
+                n_steps=512, device='cuda')
+        if input("train? (y/n): ") == 'y':
+            model = train_model(model, env, config)
+    else:
+        model = PPO('CnnPolicy', env, verbose=0, tensorboard_log=LOG_DIR, learning_rate=config["learning_rate"], 
+            n_steps=512, device='cuda') 
+        
+    # Start the game 
+    state = env.reset()
+    # Loop through the game
+    while True: 
+        
+        action, _ = model.predict(state)
+        state, _, _, _ = env.step(action)
+        env.render()
 
 if __name__ == "__main__":
     main()

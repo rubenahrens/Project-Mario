@@ -198,3 +198,29 @@ def draw_net(config, genome, view=False, filename=None, node_names=None, show_di
     dot.render(filename, view=view)
 
     return dot
+
+if __name__ == '__main__':
+    # Example usage
+    
+    # # Experiment Setup
+    # ExpA: Comparison: unconnected, partial 0.1, partial 0.5, full connected
+    # ExpB: Fitness: reward, or distance
+    # ExpC: raw image, 20, 10, 1
+    # ExpD: pop size 10, 30, 50, 100
+    # ExpE: action: full, simple, right only
+    # ExpF: net RNN or feedforward
+    
+    import neat
+    import pickle
+    
+    EXPERIMENT = "A" #change this parameter
+    
+    for i in range(1, 5):
+        config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                                neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                                f"A{i}")
+        winner = pickle.load(open(f"A{i}Result/winner.pkl", 'rb'))
+        stats = pickle.load(open(f"A{i}Result/stats.pkl", 'rb'))
+        draw_net(config, winner, filename=f"Plot/A{i}Result/Architecture")
+        plot_stats(stats, ylog=False, filename=f"Plot/A{i}Result/fitness.svg")
+        plot_species(stats, filename=f"Plot/A{i}Result/speciation.svg")

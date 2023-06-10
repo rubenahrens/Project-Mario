@@ -1,3 +1,4 @@
+import sys
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, RIGHT_ONLY
 from nes_py.wrappers import JoypadSpace
 import gym
@@ -6,10 +7,10 @@ import os
 import neat
 import pickle
 import multiprocessing as mp
-import visualize
 import cv2
 import time
 import argparse
+
 
 
 ACTIONDICT = {
@@ -19,7 +20,6 @@ ACTIONDICT = {
 
 class NEAT():
     def __init__(self, generations, parallel=10, rewardasFitness=False, scaleFactor=20, filefolder='neat', actionSet='simple'):
-        # self.config = config
         self.generations = generations
         self.thredNum = parallel
         self.filefolder = filefolder
@@ -118,12 +118,8 @@ class NEAT():
         p.add_reporter(stats)
 
         winner = p.run(self.eval_genomes, n)
-
         pickle.dump(stats, open(self.filefolder + '/stats.pkl', 'wb'))
         pickle.dump(winner, open(self.filefolder + '/winner.pkl', 'wb'))
-
-        visualize.plot_stats(stats, ylog=False, view=True)
-        visualize.plot_species(stats, view=True)
 
     def experiment(self, config_file='config'):
         local_dir = os.path.dirname(__file__)
@@ -137,10 +133,11 @@ if __name__ == "__main__":
     parser.add_argument('--p', type=int, help='Number of thread for parallel running', default=10)
     parser.add_argument('--r', action='store_true', help='Use reward as fitness')
     parser.add_argument('--f', type=int, help='Scale factor for downsample the image', default=10)
-    parser.add_argument('--z', type=str, help='Path of the result', default='neat')
+    parser.add_argument('--z', type=str, help='Path of the result', default='config')
     parser.add_argument('--a', type=str, help='Action Sample Set', default='simple')
     args = parser.parse_args()
+
     s = time.time()
-    t = NEAT(generations=10000, parallel=args.p, rewardasFitness=args.r, scaleFactor=args.f, filefolder=args.z, actionSet='simple')
+    t = NEAT(generations=1000, parallel=args.p, rewardasFitness=args.r, scaleFactor=args.f, filefolder=args.z, actionSet='simple')
     t.experiment(args.c)
     print("Running Time: ", time.time() - s)
